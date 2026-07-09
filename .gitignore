@@ -54,3 +54,6 @@ ui-debug.log
 
 # local harness settings
 .claude/
+
+.vercel
+.env*

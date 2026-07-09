@@ -33,6 +33,22 @@ output "firebase_console_url" {
   value       = "https://console.firebase.google.com/project/${google_project.this.project_id}/overview"
 }
 
+output "dotenv_local" {
+  description = "Full .env.local contents for running the app locally against real Firebase. Sensitive."
+  sensitive   = true
+  value       = <<-EOT
+    NEXT_PUBLIC_FIREBASE_API_KEY=${data.google_firebase_web_app_config.this.api_key}
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${data.google_firebase_web_app_config.this.auth_domain}
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID=${google_project.this.project_id}
+    FIREBASE_PROJECT_ID=${google_project.this.project_id}
+    FIREBASE_CLIENT_EMAIL=${google_service_account.app.email}
+    FIREBASE_PRIVATE_KEY="${local.private_key_escaped}"
+    GCP_PROJECT_ID=${google_project.this.project_id}
+    GCP_CLIENT_EMAIL=${google_service_account.app.email}
+    GCP_PRIVATE_KEY="${local.private_key_escaped}"
+  EOT
+}
+
 output "next_steps" {
   description = "Post-apply manual steps."
   value       = <<-EOT

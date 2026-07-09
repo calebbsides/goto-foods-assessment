@@ -66,6 +66,13 @@ resource "google_identity_platform_config" "this" {
   provider = google-beta
   project  = google_project.this.project_id
 
+  authorized_domains = [
+    "localhost",
+    "${google_project.this.project_id}.firebaseapp.com",
+    "${google_project.this.project_id}.web.app",
+    replace(local.production_url, "https://", ""),
+  ]
+
   sign_in {
     allow_duplicate_emails = false
   }

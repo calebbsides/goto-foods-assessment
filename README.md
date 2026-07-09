@@ -13,9 +13,10 @@ the free tiers of every service it touches.
 
 ## Quick start
 
-The app boots with **no secrets**. The catalog loads from the public API, email falls
-back to showing the invite link in the UI, structured logs go to the console, and any
-page that needs Firebase shows a short setup notice instead of a stack trace.
+The app boots with **no secrets**. The catalog loads from the public API, invites report
+their delivery status inline (email sends only once SMTP is configured), structured logs
+go to the console, and any page that needs Firebase shows a short setup notice instead of
+a stack trace.
 
 ```bash
 npm install
@@ -47,7 +48,7 @@ provider by configuration:
 | `auth` | `src/lib/auth/types.ts` | Firebase Auth (Google) | test provider (E2E) |
 | `db` | `src/lib/db/types.ts` | Firestore (Admin SDK) | none (setup notice) |
 | `catalog` | `src/lib/catalog/types.ts` | Pokemon TCG API | none (error state) |
-| `email` | `src/lib/email/types.ts` | SendGrid | link shown in UI |
+| `email` | `src/lib/email/types.ts` | SMTP (Nodemailer) | delivery status toast |
 | `observability` | `src/lib/observability/types.ts` | Google Cloud Logging | console |
 
 App code, Server Actions, and components import the interface (`getDb()`, `getEmail()`),
@@ -109,10 +110,14 @@ SSE keeps all database access on the server, so rules stay deny-all and guests s
 anonymous. Realtime becomes a `db` seam capability rather than a vendor feature leaked into
 the client.
 
-**SendGrid for email, behind an interface.** Google Cloud has no first-party email send
-service and blocks outbound SMTP, so its own documentation points to SendGrid. It sits
-behind the `email` seam with a fallback that surfaces the invite link in the UI, so the
-app runs and demos without an email provider configured.
+**SMTP relay for email, behind an interface.** Transactional providers (SendGrid,
+Resend, Postmark) gate sending to arbitrary recipients behind domain verification and
+DNS setup. Relaying through an SMTP mailbox you already own (Gmail with an App Password)
+sends *as* that mailbox, so it delivers to any recipient with no custom domain. It sits
+behind the `email` seam via a Nodemailer transport. When no SMTP provider is configured
+the seam degrades to a no-op that logs the invite, and the host sees the delivery outcome
+reported inline, so the app still runs without an email provider configured. The transport
+is provider-agnostic: any SMTP host works by changing env vars.
 
 **Prices snapshotted at add time.** Trusting a live third-party price at checkout would let
 the total drift or fail when the API is down, and trusting a client-sent price would be a
@@ -150,7 +155,7 @@ block is optional; the app degrades gracefully when one is absent.
 | --- | --- | --- |
 | `NEXT_PUBLIC_FIREBASE_*` | auth/db | Public client config (safe to expose) |
 | `FIREBASE_PROJECT_ID` / `FIREBASE_CLIENT_EMAIL` / `FIREBASE_PRIVATE_KEY` | auth/db | Admin service account. The private key contains newlines; paste them escaped as `\n` and they are un-escaped at load |
-| `SENDGRID_API_KEY` / `EMAIL_FROM` | email | Real invite emails when set |
+| `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_USER` / `EMAIL_PASS` / `EMAIL_FROM` | email | SMTP relay for real invite emails. For Gmail, `EMAIL_PASS` is an App Password; delivers to any recipient, no domain needed |
 | `GCP_*` | observability | Reuses the Firebase service account by default |
 | `APP_BASE_URL` | app | Base URL for invite links; defaults to the request origin |
 
