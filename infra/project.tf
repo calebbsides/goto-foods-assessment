@@ -26,6 +26,7 @@ resource "google_project_service" "services" {
     "firestore.googleapis.com",
     "identitytoolkit.googleapis.com",
     "logging.googleapis.com",
+    "monitoring.googleapis.com",
     "clouderrorreporting.googleapis.com",
     "cloudtrace.googleapis.com",
     "iam.googleapis.com",

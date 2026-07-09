@@ -164,6 +164,13 @@ GCP credentials are present, and `providers/console.ts` otherwise, so it runs lo
 no secrets. Web Vitals are reported from the client to `/api/vitals` and logged through the
 same seam.
 
+The consumption layer is provisioned as code in `infra/monitoring.tf`, so the logs are
+operated on, not just stored: two log-based metrics (LCP distribution from the `web_vitals`
+entries, and an application error counter), a **Cloud Monitoring dashboard** charting LCP
+p95 and error rate, and two **alert policies** (LCP p95 above 2.5s, and error rate above
+0.1/s) that notify by email. `terraform output monitoring_dashboard_url` prints the
+dashboard link.
+
 ## Environment
 
 Copy `.env.example` to `.env.local` and fill in the blocks you want to activate. Every

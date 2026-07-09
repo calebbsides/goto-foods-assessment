@@ -13,6 +13,16 @@ output "service_account_email" {
   value       = google_service_account.app.email
 }
 
+output "monitoring_dashboard_url" {
+  description = "Cloud Monitoring dashboard: LCP p95 and application error rate."
+  value       = "https://console.cloud.google.com/monitoring/dashboards/builder/${basename(google_monitoring_dashboard.app.id)}?project=${google_project.this.project_id}"
+}
+
+output "monitoring_alerts_url" {
+  description = "Cloud Monitoring alerting policies (LCP and error rate)."
+  value       = "https://console.cloud.google.com/monitoring/alerting?project=${google_project.this.project_id}"
+}
+
 output "vercel_project_id" {
   description = "Vercel project id."
   value       = vercel_project.app.id
