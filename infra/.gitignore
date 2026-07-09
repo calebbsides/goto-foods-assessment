@@ -1,0 +1,13 @@
+# Terraform state can contain secrets (service account keys, tokens)
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Never commit real variable values
+terraform.tfvars
+*.auto.tfvars
+
+# Generated key material
+*.json
+!*.example.json

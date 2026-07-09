@@ -1,0 +1,19 @@
+# Copy to terraform.tfvars and fill in. Do not commit terraform.tfvars.
+# Find your billing account: gcloud billing accounts list
+
+billing_account = "XXXXXX-XXXXXX-XXXXXX"
+support_email   = "you@example.com"
+
+# owner/name of the GitHub repo Vercel deploys from
+github_repo = "your-github-username/group-order"
+
+# Optional
+# org_id             = ""
+# vercel_team_id     = ""
+# firestore_location = "nam5"
+# production_branch  = "main"
+
+# The Vercel API token is read from the TF_VAR_vercel_api_token environment
+# variable, not from this file, so it never lands on disk. Set it in your shell:
+#   PowerShell: $env:TF_VAR_vercel_api_token = "..."
+#   bash:       export TF_VAR_vercel_api_token="..."
