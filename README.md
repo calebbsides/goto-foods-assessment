@@ -185,6 +185,22 @@ block is optional; the app degrades gracefully when one is absent.
    `FIREBASE_PRIVATE_KEY`, paste the key with `\n` in place of newlines.
 3. Deploy. The SSE route and Server Actions run on the Node.js runtime.
 
+## Security and supply chain
+
+- **Read vs write authorization** is covered under [Authorization](#authorization): writes
+  are role-authorized, reads are capability-gated by the unguessable order link.
+- **Public telemetry endpoint.** `/api/vitals` receives Web Vitals and client error beacons,
+  so it is reachable unauthenticated. It is hardened against abuse: a same-origin check, a
+  2 KB body cap, and Zod validation of the payload shape, so it cannot be used as an
+  arbitrary log-injection or cost-amplification sink.
+- **Runtime is pinned.** `engines.node` and `.nvmrc` fix the Node major (22) so local, CI,
+  and Vercel builds run the same runtime.
+- **Dependency audit.** `npm audit` reports a small number of moderate advisories, all in
+  transitive build and logging tooling (`postcss` under the Next toolchain, `uuid` under
+  `@google-cloud/logging`), none on a runtime request path. Their only "fixes" are breaking
+  major downgrades of Next or the logging client, so they are consciously deferred rather
+  than force-fixed; the direct dependency tree is clean.
+
 ## Testing strategy
 
 - **Unit** (`tests/unit`): the pure cores. Money and tax math, per-person totals, the cap
