@@ -24,7 +24,9 @@ async function startOrder(page: Page): Promise<string> {
 async function inviteGuest(page: Page, orderId: string): Promise<string> {
   await page.getByPlaceholder("friend@example.com").fill("misty@example.com");
   await page.getByRole("button", { name: "Invite" }).click();
-  await expect(page.getByText(/misty@example\.com/)).toBeVisible();
+  await expect(
+    page.getByText(/(Invite sent to|Could not send the invite to) misty@example\.com/),
+  ).toBeVisible();
 
   const response = await page.request.post("/api/test/invite", {
     data: { orderId, email: "misty@example.com" },
