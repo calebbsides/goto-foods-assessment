@@ -47,21 +47,18 @@ resource "google_firebaserules_release" "firestore" {
   depends_on   = [google_firestore_database.this]
 }
 
-resource "google_firestore_index" "invite_token" {
-  provider    = google-beta
-  project     = google_project.this.project_id
-  database    = google_firestore_database.this.name
-  collection  = "participants"
-  query_scope = "COLLECTION_GROUP"
+resource "google_firestore_field" "invite_token" {
+  provider   = google-beta
+  project    = google_project.this.project_id
+  database   = google_firestore_database.this.name
+  collection = "participants"
+  field      = "inviteTokenHash"
 
-  fields {
-    field_path = "inviteTokenHash"
-    order      = "ASCENDING"
-  }
-
-  fields {
-    field_path = "__name__"
-    order      = "ASCENDING"
+  index_config {
+    indexes {
+      order       = "ASCENDING"
+      query_scope = "COLLECTION_GROUP"
+    }
   }
 }
 

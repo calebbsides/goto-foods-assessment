@@ -22,11 +22,15 @@ export function createGcpLogger(): Logger {
   const log = logging.logSync(LOG_NAME);
 
   function write(severity: LogSeverity, message: string, context?: Record<string, unknown>): void {
-    const entry = log.entry(
-      { severity: toGcpSeverity(severity), resource: { type: "global" } },
-      { message, ...context },
-    );
-    log.write(entry);
+    try {
+      const entry = log.entry(
+        { severity: toGcpSeverity(severity), resource: { type: "global" } },
+        { message, ...context },
+      );
+      log.write(entry);
+    } catch {
+      console.log(JSON.stringify({ severity: toGcpSeverity(severity), message, ...context }));
+    }
   }
 
   return {

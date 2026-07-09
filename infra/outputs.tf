@@ -19,8 +19,8 @@ output "vercel_project_id" {
 }
 
 output "vercel_production_url" {
-  description = "Default production URL Vercel assigns to the project."
-  value       = "https://${vercel_project.app.name}.vercel.app"
+  description = "Production URL Vercel assigns to the project."
+  value       = local.production_url
 }
 
 output "enable_google_signin_url" {
@@ -39,7 +39,7 @@ output "next_steps" {
     1. Enable Google sign-in:
        ${data.google_firebase_web_app_config.this.auth_domain != "" ? "open the Authentication providers page (see enable_google_signin_url), enable Google, set the support email, save." : ""}
     2. Authorize the Vercel domain for auth:
-       Firebase console > Authentication > Settings > Authorized domains > add group-order.vercel.app
+       Firebase console > Authentication > Settings > Authorized domains > add group-order-theta.vercel.app
     3. Push to the '${var.production_branch}' branch (or redeploy in Vercel) to trigger the first production build.
   EOT
 }

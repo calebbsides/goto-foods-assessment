@@ -5,8 +5,21 @@ import type { Logger } from "@/lib/observability/types";
 
 let cached: Logger | null = null;
 
+function select(): Logger {
+  if (!isGcpLoggingConfigured()) {
+    return createConsoleLogger();
+  }
+  try {
+    return createGcpLogger();
+  } catch {
+    const fallback = createConsoleLogger();
+    fallback.warn("observability.gcp_init_failed", { fallback: "console" });
+    return fallback;
+  }
+}
+
 export function getLogger(): Logger {
   if (cached) return cached;
-  cached = isGcpLoggingConfigured() ? createGcpLogger() : createConsoleLogger();
+  cached = select();
   return cached;
 }
