@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
     ],
   },
   typedRoutes: true,
+  serverExternalPackages: ["firebase-admin", "@google-cloud/logging"],
 };
 
 export default nextConfig;
