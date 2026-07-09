@@ -17,6 +17,7 @@ export interface InviteInput {
 export interface InviteResult {
   participantId: string;
   alreadyInvited: boolean;
+  alreadyJoined: boolean;
 }
 
 export interface JoinInput {
@@ -57,6 +58,7 @@ export type Unsubscribe = () => void;
 export interface Db {
   createOrder(input: CreateOrderInput): Promise<string>;
   getSnapshot(orderId: string): Promise<OrderSnapshot | null>;
+  findOpenOrderByHost(hostUid: string): Promise<string | null>;
   findOrderIdByTokenHash(tokenHash: string): Promise<string | null>;
   invite(input: InviteInput): Promise<InviteResult>;
   join(input: JoinInput): Promise<JoinResult>;

@@ -1,58 +1,113 @@
-import Link from "next/link";
+import { Clock, ShoppingCart, Users } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { isFirebaseConfigured } from "@/lib/config";
+import { findHostOpenOrder } from "@/lib/orders/find-host-open-order";
 import { SetupNotice } from "@/components/setup-notice";
+import { SiteHeader } from "@/components/site-header";
 import { StartOrderButton } from "@/components/start-order-button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default async function HomePage() {
   const configured = isFirebaseConfigured();
   const user = configured ? await getCurrentUser() : null;
+  const openOrderId = user ? await findHostOpenOrder(user.uid) : null;
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-8 px-6 py-16">
-      <header className="space-y-3">
-        <p className="text-sm font-semibold uppercase tracking-wide text-brand">
-          Group order
-        </p>
-        <h1 className="text-4xl font-bold tracking-tight">
-          Build a Pokemon card order together
-        </h1>
-        <p className="text-lg text-muted">
-          Start an order, invite up to two friends by email, and everyone adds cards to
-          their own cart. As the host you set the timer and check out.
-        </p>
-      </header>
+    <>
+      <SiteHeader user={user} />
 
-      {!configured ? (
-        <SetupNotice />
-      ) : user ? (
-        <div className="space-y-3">
-          <p className="text-sm text-muted">Signed in as {user.email}</p>
-          <StartOrderButton />
+      <main className="flex-1">
+        <section className="relative overflow-hidden border-b">
+          <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_60%_at_50%_0%,var(--color-accent)_0%,transparent_70%)] opacity-70" />
+          <div className="container-page grid gap-12 py-20 lg:grid-cols-2 lg:items-center lg:py-28">
+            <div className="space-y-7">
+              <Badge variant="secondary" className="w-fit">
+                <span className="text-primary">New</span> group ordering for collectors
+              </Badge>
+              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+                Build a Pokémon card order,{" "}
+                <span className="text-primary">together</span>.
+              </h1>
+              <p className="max-w-lg text-lg text-muted-foreground">
+                Start a cart, invite up to two friends by email, and everyone adds cards
+                in real time. As the host you set the timer and check out for the group.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3">
+                {configured ? (
+                  <StartOrderButton
+                    signedIn={user !== null}
+                    existingOrderId={openOrderId}
+                  />
+                ) : null}
+              </div>
+            </div>
+
+            <div className="lg:pl-6">
+              {!configured ? (
+                <SetupNotice />
+              ) : (
+                <div className="grid gap-4">
+                  <FeatureCard
+                    icon={<Users className="size-5" />}
+                    step="01"
+                    title="Invite the crew"
+                    body="Add up to two friends by email. They join with a link, no account required."
+                  />
+                  <FeatureCard
+                    icon={<ShoppingCart className="size-5" />}
+                    step="02"
+                    title="Fill your cart"
+                    body="Browse the featured catalog and add cards to your own cart, live for everyone."
+                  />
+                  <FeatureCard
+                    icon={<Clock className="size-5" />}
+                    step="03"
+                    title="Host checks out"
+                    body="Set a countdown to lock carts, review the per-person breakdown, and check out."
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t">
+        <div className="container-page flex h-16 items-center text-sm text-muted-foreground">
+          Built with real market prices from the Pokémon TCG API.
         </div>
-      ) : (
-        <Link
-          href="/login"
-          className="inline-flex w-fit items-center gap-2 rounded-lg bg-brand px-5 py-3 font-semibold text-brand-contrast transition hover:bg-brand-strong"
-        >
-          Sign in to start an order
-        </Link>
-      )}
+      </footer>
+    </>
+  );
+}
 
-      <ol className="grid gap-4 border-t border-border pt-8 text-sm text-muted sm:grid-cols-3">
-        <li>
-          <span className="font-semibold text-foreground">1. Invite</span>
-          <p>Add up to two friends by email. They join with a link, no account needed.</p>
-        </li>
-        <li>
-          <span className="font-semibold text-foreground">2. Add cards</span>
-          <p>Everyone browses the catalog and fills their own cart in real time.</p>
-        </li>
-        <li>
-          <span className="font-semibold text-foreground">3. Check out</span>
-          <p>The host reviews each person&apos;s cart and checks out the group order.</p>
-        </li>
-      </ol>
-    </main>
+function FeatureCard({
+  icon,
+  step,
+  title,
+  body,
+}: {
+  icon: React.ReactNode;
+  step: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <Card className="transition-shadow hover:shadow-md">
+      <CardContent className="flex items-start gap-4 p-5">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          {icon}
+        </span>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs text-muted-foreground">{step}</span>
+            <h3 className="font-semibold">{title}</h3>
+          </div>
+          <p className="text-sm text-muted-foreground">{body}</p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

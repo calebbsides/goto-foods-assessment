@@ -22,8 +22,11 @@ export const gcpLoggingConfig = {
 };
 
 export const emailConfig = {
-  apiKey: process.env.SENDGRID_API_KEY,
-  from: process.env.EMAIL_FROM,
+  host: process.env.EMAIL_HOST,
+  port: Number(process.env.EMAIL_PORT ?? 465),
+  user: process.env.EMAIL_USER,
+  pass: process.env.EMAIL_PASS,
+  from: process.env.EMAIL_FROM ?? process.env.EMAIL_USER,
 };
 
 export function isFirebaseConfigured(): boolean {
@@ -37,7 +40,7 @@ export function isFirebaseConfigured(): boolean {
 }
 
 export function isEmailConfigured(): boolean {
-  return Boolean(emailConfig.apiKey && emailConfig.from);
+  return Boolean(emailConfig.host && emailConfig.user && emailConfig.pass && emailConfig.from);
 }
 
 export function isGcpLoggingConfigured(): boolean {

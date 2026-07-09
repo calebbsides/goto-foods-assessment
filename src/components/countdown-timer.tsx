@@ -1,5 +1,7 @@
 "use client";
 
+import { Clock } from "lucide-react";
+import { cn } from "@/lib/cn";
 import { useNow } from "@/lib/use-now";
 
 function format(ms: number): string {
@@ -13,15 +15,22 @@ export function CountdownTimer({ closesAt }: { closesAt: number }) {
   const now = useNow(1000);
   const remaining = now > 0 ? closesAt - now : closesAt;
   const expired = now > 0 && remaining <= 0;
+  const urgent = !expired && remaining <= 30_000;
 
   return (
     <div
       aria-live="polite"
-      className={`rounded-lg px-3 py-2 text-sm font-medium ${
-        expired ? "bg-brand/10 text-brand" : "bg-surface-muted text-foreground"
-      }`}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium tabular-nums",
+        expired
+          ? "border-transparent bg-destructive/10 text-destructive"
+          : urgent
+            ? "border-transparent bg-warning/15 text-warning"
+            : "bg-card text-foreground",
+      )}
     >
-      {expired ? "Ordering closed" : `Closes in ${format(remaining)}`}
+      <Clock className="size-3.5" />
+      {expired ? "Ordering closed" : format(remaining)}
     </div>
   );
 }

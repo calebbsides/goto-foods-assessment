@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { Timer } from "lucide-react";
 import { setTimer } from "@/actions/set-timer";
+import { Button } from "@/components/ui/button";
 
 const PRESETS = [1, 5, 10];
 
@@ -25,33 +27,43 @@ export function TimerControls({ orderId, active }: { orderId: string; active: bo
   }
 
   return (
-    <section aria-label="Order timer" className="space-y-2 rounded-xl border border-border bg-surface p-4">
-      <h2 className="font-semibold">Close the order on a timer</h2>
-      <p className="text-sm text-muted">
-        When the timer runs out, everyone&apos;s cart locks and you move to checkout.
+    <section aria-label="Order timer" className="rounded-xl border bg-card p-4 shadow-sm">
+      <div className="mb-1 flex items-center gap-2">
+        <Timer className="size-4 text-muted-foreground" />
+        <h2 className="font-semibold">Close on a timer</h2>
+      </div>
+      <p className="mb-3 text-sm text-muted-foreground">
+        When it runs out, every cart locks and you move to checkout.
       </p>
       <div className="flex flex-wrap items-center gap-2">
         {PRESETS.map((minutes) => (
-          <button
+          <Button
             key={minutes}
             onClick={() => apply(minutes)}
             disabled={pending}
-            className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-surface-muted disabled:opacity-60"
+            variant="outline"
+            size="sm"
           >
             {minutes} min
-          </button>
+          </Button>
         ))}
         {active ? (
-          <button
+          <Button
             onClick={() => apply(null)}
             disabled={pending}
-            className="rounded-lg px-3 py-1.5 text-sm font-medium text-brand hover:underline disabled:opacity-60"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
           >
-            Clear timer
-          </button>
+            Clear
+          </Button>
         ) : null}
       </div>
-      {error ? <p className="text-sm text-brand">{error}</p> : null}
+      {error ? (
+        <p className="mt-2 text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
     </section>
   );
 }

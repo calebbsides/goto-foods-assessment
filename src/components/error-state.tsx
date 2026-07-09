@@ -1,3 +1,5 @@
+import { CircleAlert } from "lucide-react";
+
 export function ErrorState({
   title,
   message,
@@ -8,10 +10,17 @@ export function ErrorState({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-brand/40 bg-brand/5 p-6 text-sm">
-      <h3 className="text-base font-semibold text-foreground">{title}</h3>
-      <p className="mt-1 text-muted">{message}</p>
-      {children ? <div className="mt-3">{children}</div> : null}
+    <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6">
+      <div className="flex items-start gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
+          <CircleAlert className="size-5" />
+        </span>
+        <div className="space-y-1">
+          <h3 className="text-base font-semibold">{title}</h3>
+          <p className="text-sm text-muted-foreground">{message}</p>
+          {children ? <div className="pt-2">{children}</div> : null}
+        </div>
+      </div>
     </div>
   );
 }

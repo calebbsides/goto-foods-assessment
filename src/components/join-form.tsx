@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { join } from "@/actions/join";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export function JoinForm({ token }: { token: string }) {
   const [error, setError] = useState<string | null>(null);
@@ -18,28 +21,27 @@ export function JoinForm({ token }: { token: string }) {
   }
 
   return (
-    <form action={submit} className="space-y-3">
+    <form action={submit} className="space-y-4">
       <input type="hidden" name="token" value={token} />
-      <label className="block text-sm font-medium" htmlFor="join-name">
-        Your name
-      </label>
-      <input
-        id="join-name"
-        name="name"
-        type="text"
-        required
-        maxLength={60}
-        placeholder="Ash Ketchum"
-        className="w-full rounded-lg border border-border bg-surface px-3 py-2"
-      />
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-lg bg-brand px-5 py-3 font-semibold text-brand-contrast transition hover:bg-brand-strong disabled:opacity-60"
-      >
+      <div className="space-y-2">
+        <Label htmlFor="join-name">Your name</Label>
+        <Input
+          id="join-name"
+          name="name"
+          type="text"
+          required
+          maxLength={60}
+          placeholder="Ash Ketchum"
+        />
+      </div>
+      <Button type="submit" disabled={pending} size="lg" className="w-full">
         {pending ? "Joining..." : "Join the order"}
-      </button>
-      {error ? <p className="text-sm text-brand">{error}</p> : null}
+      </Button>
+      {error ? (
+        <p className="text-center text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
     </form>
   );
 }

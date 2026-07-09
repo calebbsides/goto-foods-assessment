@@ -52,6 +52,21 @@ describe("order flow (emulator)", () => {
     expect(snapshot?.participants[0].uid).toBe("host-1");
   });
 
+  it("resumes the existing open order instead of creating a second", async () => {
+    const first = await newOrder();
+    const second = await newOrder();
+    expect(second).toBe(first);
+    expect(await db.findOpenOrderByHost("host-1")).toBe(first);
+  });
+
+  it("allows a new order once the previous one is checked out", async () => {
+    const first = await newOrder();
+    await db.checkout({ orderId: first, hostUid: "host-1" });
+    expect(await db.findOpenOrderByHost("host-1")).toBeNull();
+    const second = await newOrder();
+    expect(second).not.toBe(first);
+  });
+
   it("enforces the three-participant cap (host + two guests)", async () => {
     const orderId = await newOrder();
     await db.invite({ orderId, hostUid: "host-1", email: "a@example.com", tokenHash: hashInviteToken("a") });
@@ -76,9 +91,28 @@ describe("order flow (emulator)", () => {
       tokenHash: hashInviteToken("t2"),
     });
     expect(second.alreadyInvited).toBe(true);
+    expect(second.alreadyJoined).toBe(false);
     expect(second.participantId).toBe(first.participantId);
     const snapshot = await db.getSnapshot(orderId);
     expect(snapshot?.participants).toHaveLength(2);
+  });
+
+  it("rotates the invite token when re-inviting a not-yet-joined email", async () => {
+    const orderId = await newOrder();
+    await db.invite({ orderId, hostUid: "host-1", email: "dupe@example.com", tokenHash: hashInviteToken("old") });
+    await db.invite({ orderId, hostUid: "host-1", email: "dupe@example.com", tokenHash: hashInviteToken("new") });
+    expect(await db.findOrderIdByTokenHash(hashInviteToken("new"))).toBe(orderId);
+    expect(await db.findOrderIdByTokenHash(hashInviteToken("old"))).toBeNull();
+  });
+
+  it("does not rotate the token once the invitee has joined", async () => {
+    const orderId = await newOrder();
+    await db.invite({ orderId, hostUid: "host-1", email: "guest@example.com", tokenHash: hashInviteToken("keep") });
+    await db.join({ tokenHash: hashInviteToken("keep"), name: "Misty" });
+    const reinvite = await db.invite({ orderId, hostUid: "host-1", email: "guest@example.com", tokenHash: hashInviteToken("rotate") });
+    expect(reinvite.alreadyJoined).toBe(true);
+    expect(await db.findOrderIdByTokenHash(hashInviteToken("keep"))).toBe(orderId);
+    expect(await db.findOrderIdByTokenHash(hashInviteToken("rotate"))).toBeNull();
   });
 
   it("rejects invites from a non-host", async () => {

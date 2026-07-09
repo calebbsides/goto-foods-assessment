@@ -89,7 +89,15 @@ export function createFirestoreDb(): Db {
       const orderId = nanoid(12);
       const orderRef = orders.doc(orderId);
       const now = Timestamp.now();
-      await firestore.runTransaction(async (tx) => {
+      const openByHost = orders
+        .where("hostUid", "==", input.hostUid)
+        .where("status", "==", "open")
+        .limit(1);
+      return firestore.runTransaction(async (tx) => {
+        const existing = await tx.get(openByHost);
+        if (!existing.empty) {
+          return existing.docs[0].id;
+        }
         tx.set(orderRef, {
           hostUid: input.hostUid,
           hostName: input.hostName,
@@ -108,11 +116,21 @@ export function createFirestoreDb(): Db {
           uid: input.hostUid,
           inviteTokenHash: null,
         });
+        return orderId;
       });
-      return orderId;
     },
 
     getSnapshot: readSnapshot,
+
+    async findOpenOrderByHost(hostUid) {
+      const snap = await orders
+        .where("hostUid", "==", hostUid)
+        .where("status", "==", "open")
+        .orderBy("createdAt", "desc")
+        .limit(1)
+        .get();
+      return snap.empty ? null : snap.docs[0].id;
+    },
 
     async findOrderIdByTokenHash(tokenHash) {
       const matches = await firestore
@@ -138,7 +156,11 @@ export function createFirestoreDb(): Db {
           (doc) => doc.data().email === input.email,
         );
         if (existing) {
-          return { participantId: existing.id, alreadyInvited: true };
+          const alreadyJoined = existing.data().joinedAt !== null;
+          if (!alreadyJoined) {
+            tx.update(existing.ref, { inviteTokenHash: input.tokenHash });
+          }
+          return { participantId: existing.id, alreadyInvited: true, alreadyJoined };
         }
         if (!canAddParticipant(participantsSnap.size)) {
           throw new DbError("cap_reached");
@@ -153,7 +175,7 @@ export function createFirestoreDb(): Db {
           uid: null,
           inviteTokenHash: input.tokenHash,
         });
-        return { participantId: participantRef.id, alreadyInvited: false };
+        return { participantId: participantRef.id, alreadyInvited: false, alreadyJoined: false };
       });
     },
 

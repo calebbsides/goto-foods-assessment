@@ -1,9 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, use, useMemo, useState } from "react";
+import { CircleAlert, Lock, Users } from "lucide-react";
 import { addItem } from "@/actions/add-item";
 import { removeItem } from "@/actions/remove-item";
 import { CardGrid } from "@/components/card-grid";
+import { CardGridSkeleton } from "@/components/card-grid-skeleton";
+import { CatalogBoundary } from "@/components/catalog-boundary";
 import { CheckoutButton } from "@/components/checkout-button";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { InvitePanel } from "@/components/invite-panel";
@@ -17,12 +20,17 @@ import { useOrderStream } from "@/lib/use-order-stream";
 
 interface LiveOrderProps {
   initial: OrderSnapshot;
-  cards: CatalogCard[];
+  cardsPromise: Promise<CatalogCard[]>;
   role: "host" | "guest" | "visitor";
   callerParticipantId: string | null;
 }
 
-export function LiveOrder({ initial, cards, role, callerParticipantId }: LiveOrderProps) {
+export function LiveOrder({
+  initial,
+  cardsPromise,
+  role,
+  callerParticipantId,
+}: LiveOrderProps) {
   const snapshot = useOrderStream(initial.order.id, initial);
   const totals = useMemo(() => computeTotals(snapshot), [snapshot]);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -56,27 +64,47 @@ export function LiveOrder({ initial, cards, role, callerParticipantId }: LiveOrd
   }
 
   const disabledReason = closed
-    ? "Ordering is closed"
+    ? "Ordering closed"
     : role === "visitor"
       ? "Join to add cards"
       : undefined;
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
       <div className="space-y-4">
         {actionError ? (
-          <p className="rounded-lg bg-brand/10 px-3 py-2 text-sm text-brand">{actionError}</p>
+          <p
+            className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+            role="alert"
+          >
+            <CircleAlert className="size-4 shrink-0" />
+            {actionError}
+          </p>
         ) : null}
-        <CardGrid cards={cards} disabled={!canAdd} disabledReason={disabledReason} onAdd={onAdd} />
+        <CatalogBoundary>
+          <Suspense fallback={<CardGridSkeleton />}>
+            <CatalogSection
+              cardsPromise={cardsPromise}
+              disabled={!canAdd}
+              disabledReason={disabledReason}
+              onAdd={onAdd}
+            />
+          </Suspense>
+        </CatalogBoundary>
       </div>
 
-      <aside className="space-y-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">Group order</h2>
-            <p className="text-sm text-muted">
-              {joinedCount} joined · {totalSlots}/{MAX_PARTICIPANTS} slots
-            </p>
+      <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+        <div className="flex items-center justify-between gap-3 rounded-xl border bg-card p-4 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Users className="size-4" />
+            </span>
+            <div>
+              <h2 className="font-semibold leading-tight">Group order</h2>
+              <p className="text-xs text-muted-foreground">
+                {joinedCount} joined · {totalSlots}/{MAX_PARTICIPANTS} slots
+              </p>
+            </div>
           </div>
           {snapshot.order.closesAt !== null && snapshot.order.status === "open" ? (
             <CountdownTimer closesAt={snapshot.order.closesAt} />
@@ -84,7 +112,8 @@ export function LiveOrder({ initial, cards, role, callerParticipantId }: LiveOrd
         </div>
 
         {closed ? (
-          <p className="rounded-lg bg-surface-muted px-3 py-2 text-sm text-muted">
+          <p className="flex items-center gap-2 rounded-xl border bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
+            <Lock className="size-4 shrink-0" />
             Ordering is closed. Carts are locked.
           </p>
         ) : null}
@@ -117,8 +146,32 @@ export function LiveOrder({ initial, cards, role, callerParticipantId }: LiveOrd
           }
         />
 
-        {role === "host" ? <CheckoutButton orderId={snapshot.order.id} /> : null}
+        {role === "host" ? (
+          <CheckoutButton orderId={snapshot.order.id} totals={totals} />
+        ) : null}
       </aside>
     </div>
+  );
+}
+
+function CatalogSection({
+  cardsPromise,
+  disabled,
+  disabledReason,
+  onAdd,
+}: {
+  cardsPromise: Promise<CatalogCard[]>;
+  disabled: boolean;
+  disabledReason?: string;
+  onAdd: (card: CatalogCard) => Promise<void>;
+}) {
+  const cards = use(cardsPromise);
+  return (
+    <CardGrid
+      cards={cards}
+      disabled={disabled}
+      disabledReason={disabledReason}
+      onAdd={onAdd}
+    />
   );
 }

@@ -2,8 +2,12 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { Check, Plus } from "lucide-react";
 import type { CatalogCard } from "@/lib/catalog/types";
+import { cn } from "@/lib/cn";
 import { formatCents } from "@/lib/money";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface CardGridProps {
   cards: CatalogCard[];
@@ -14,14 +18,21 @@ interface CardGridProps {
 
 export function CardGrid({ cards, disabled, disabledReason, onAdd }: CardGridProps) {
   return (
-    <section aria-label="Card catalog" className="space-y-4">
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-lg font-semibold">Featured cards</h2>
+    <section aria-label="Card catalog" className="space-y-5">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">Featured cards</h2>
+          <p className="text-sm text-muted-foreground">
+            Live market prices from the Pokémon TCG API.
+          </p>
+        </div>
         {disabled && disabledReason ? (
-          <p className="text-sm text-muted">{disabledReason}</p>
+          <Badge variant="muted" className="shrink-0">
+            {disabledReason}
+          </Badge>
         ) : null}
       </div>
-      <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
         {cards.map((card) => (
           <CatalogTile key={card.id} card={card} disabled={disabled} onAdd={onAdd} />
         ))}
@@ -40,41 +51,67 @@ function CatalogTile({
   onAdd: (card: CatalogCard) => Promise<void>;
 }) {
   const [pending, setPending] = useState(false);
+  const [added, setAdded] = useState(false);
 
   async function add() {
     setPending(true);
     try {
       await onAdd(card);
+      setAdded(true);
+      setTimeout(() => setAdded(false), 1200);
     } finally {
       setPending(false);
     }
   }
 
   return (
-    <li className="flex flex-col rounded-xl border border-border bg-surface p-3">
-      {card.imageSmall ? (
-        <Image
-          src={card.imageSmall}
-          alt={card.name}
-          width={245}
-          height={342}
-          className="mx-auto h-auto w-full max-w-[180px] rounded-lg"
-        />
-      ) : null}
-      <div className="mt-3 flex flex-1 flex-col">
-        <p className="font-medium leading-tight">{card.name}</p>
-        <p className="text-xs text-muted">
-          {card.setName} · {card.rarity}
-        </p>
-        <div className="mt-auto flex items-center justify-between pt-3">
-          <span className="font-semibold">{formatCents(card.priceCents)}</span>
-          <button
+    <li className="group relative flex flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+      <div className="relative aspect-[3/4] overflow-hidden bg-muted">
+        {card.imageSmall ? (
+          <Image
+            src={card.imageSmall}
+            alt={card.name}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
+            className="object-contain p-3 transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : null}
+        {card.rarity ? (
+          <Badge
+            variant="secondary"
+            className="absolute left-2 top-2 backdrop-blur supports-[backdrop-filter]:bg-secondary/70"
+          >
+            {card.rarity}
+          </Badge>
+        ) : null}
+      </div>
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div className="space-y-0.5">
+          <p className="line-clamp-1 font-medium leading-tight">{card.name}</p>
+          <p className="line-clamp-1 text-xs text-muted-foreground">{card.setName}</p>
+        </div>
+        <div className="mt-auto flex items-center justify-between gap-2">
+          <span className="text-lg font-semibold tabular-nums">
+            {formatCents(card.priceCents)}
+          </span>
+          <Button
             onClick={add}
             disabled={disabled || pending}
-            className="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-brand-contrast transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-50"
+            size="sm"
+            variant={added ? "secondary" : "default"}
+            className={cn(added && "text-success")}
+            aria-label={`Add ${card.name} to cart`}
           >
-            {pending ? "Adding..." : "Add"}
-          </button>
+            {added ? (
+              <>
+                <Check /> Added
+              </>
+            ) : (
+              <>
+                <Plus /> {pending ? "Adding" : "Add"}
+              </>
+            )}
+          </Button>
         </div>
       </div>
     </li>

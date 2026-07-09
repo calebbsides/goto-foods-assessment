@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ArrowLeft, CircleCheck } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { isFirebaseConfigured } from "@/lib/config";
 import { getOrderSnapshot } from "@/lib/orders/get-order-snapshot";
 import { computeTotals } from "@/lib/totals";
 import { ParticipantBreakdown } from "@/components/participant-breakdown";
 import { SetupNotice } from "@/components/setup-notice";
+import { SiteHeader } from "@/components/site-header";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "Order summary" };
 
@@ -19,15 +23,20 @@ export default async function CheckoutPage({
 
   if (!isFirebaseConfigured()) {
     return (
-      <main className="mx-auto w-full max-w-md flex-1 px-6 py-16">
-        <SetupNotice />
-      </main>
+      <>
+        <SiteHeader />
+        <main className="container-page flex-1 py-16">
+          <div className="mx-auto max-w-md">
+            <SetupNotice />
+          </div>
+        </main>
+      </>
     );
   }
 
   const user = await getCurrentUser();
   if (!user) {
-    redirect("/login");
+    redirect("/");
   }
 
   const snapshot = await getOrderSnapshot(orderId);
@@ -39,27 +48,37 @@ export default async function CheckoutPage({
   }
 
   const totals = computeTotals(snapshot);
+  const placed = snapshot.order.status === "checked_out";
 
   return (
-    <main className="mx-auto w-full max-w-xl flex-1 space-y-6 px-6 py-10">
-      <header className="space-y-1">
-        <p className="text-sm font-semibold uppercase tracking-wide text-success">
-          {snapshot.order.status === "checked_out" ? "Order placed" : "Order summary"}
-        </p>
-        <h1 className="text-2xl font-bold">Group order breakdown</h1>
-        <p className="text-sm text-muted">
-          Each person&apos;s cart, rolled up into the group total.
-        </p>
-      </header>
+    <>
+      <SiteHeader user={user} />
+      <main className="container-page flex-1 py-10">
+        <div className="mx-auto max-w-xl space-y-6">
+          <header className="space-y-2">
+            {placed ? (
+              <Badge variant="success">
+                <CircleCheck className="size-3.5" /> Order placed
+              </Badge>
+            ) : (
+              <Badge variant="secondary">Order summary</Badge>
+            )}
+            <h1 className="text-2xl font-bold tracking-tight">Group order breakdown</h1>
+            <p className="text-sm text-muted-foreground">
+              Each person&apos;s cart, rolled up into the group total.
+            </p>
+          </header>
 
-      <ParticipantBreakdown totals={totals} />
+          <ParticipantBreakdown totals={totals} />
 
-      <Link
-        href={`/orders/${orderId}`}
-        className="inline-block text-sm font-medium text-accent hover:underline"
-      >
-        Back to the order
-      </Link>
-    </main>
+          <Button asChild variant="ghost" size="sm">
+            <Link href={`/orders/${orderId}`}>
+              <ArrowLeft />
+              Back to the order
+            </Link>
+          </Button>
+        </div>
+      </main>
+    </>
   );
 }

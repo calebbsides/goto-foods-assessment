@@ -15,7 +15,7 @@ export interface InviteData {
   email: string;
   joinUrl: string;
   delivered: boolean;
-  alreadyInvited: boolean;
+  alreadyJoined: boolean;
 }
 
 export async function invite(formData: FormData): Promise<ActionResult<InviteData>> {
@@ -41,13 +41,13 @@ export async function invite(formData: FormData): Promise<ActionResult<InviteDat
 
     const joinUrl = await buildJoinUrl(token);
 
-    if (result.alreadyInvited) {
-      return ok({ email, joinUrl, delivered: false, alreadyInvited: true });
+    if (result.alreadyJoined) {
+      return ok({ email, joinUrl, delivered: false, alreadyJoined: true });
     }
 
     const sent = await getEmail().sendInvite({ to: email, hostName: host.name, joinUrl });
     reportEvent("order.invited", { orderId, delivered: sent.delivered });
-    return ok({ email, joinUrl, delivered: sent.delivered, alreadyInvited: false });
+    return ok({ email, joinUrl, delivered: sent.delivered, alreadyJoined: false });
   } catch (error) {
     if (error instanceof DbError && error.code === "cap_reached") {
       return fail("This group is full (3 participants max).");

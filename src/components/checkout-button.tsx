@@ -1,9 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import { ReceiptText } from "lucide-react";
 import { checkout } from "@/actions/checkout";
+import type { OrderTotals } from "@/lib/domain";
+import { formatCents } from "@/lib/money";
+import { ParticipantBreakdown } from "@/components/participant-breakdown";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
-export function CheckoutButton({ orderId }: { orderId: string }) {
+export function CheckoutButton({ orderId, totals }: { orderId: string; totals: OrderTotals }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -18,16 +31,36 @@ export function CheckoutButton({ orderId }: { orderId: string }) {
   }
 
   return (
-    <form action={submit} className="space-y-2">
-      <input type="hidden" name="orderId" value={orderId} />
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-lg bg-brand px-5 py-3 font-semibold text-brand-contrast transition hover:bg-brand-strong disabled:opacity-60"
-      >
-        {pending ? "Checking out..." : "Review and check out"}
-      </button>
-      {error ? <p className="text-sm text-brand">{error}</p> : null}
-    </form>
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button size="lg" className="w-full">
+          <ReceiptText />
+          Review and check out
+          <span className="ml-auto tabular-nums">{formatCents(totals.grandTotalCents)}</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Order summary</DialogTitle>
+          <DialogDescription>
+            Each person&apos;s cart, rolled up into the group total.
+          </DialogDescription>
+        </DialogHeader>
+
+        <ParticipantBreakdown totals={totals} />
+
+        <form action={submit} className="space-y-2">
+          <input type="hidden" name="orderId" value={orderId} />
+          <Button type="submit" disabled={pending} size="lg" className="w-full">
+            {pending ? "Checking out..." : "Place group order"}
+          </Button>
+          {error ? (
+            <p className="text-center text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          ) : null}
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

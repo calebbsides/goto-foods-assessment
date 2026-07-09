@@ -12,7 +12,7 @@ export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
 
   if (HOST_ONLY.test(pathname) && !request.cookies.get(SESSION_COOKIE)) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   const response = NextResponse.next();

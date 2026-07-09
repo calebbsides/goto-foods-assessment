@@ -1,16 +1,20 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { signInWithPopup } from "firebase/auth";
 import { getClientAuth, googleProvider } from "@/lib/firebase/client";
 
-export function GoogleSignIn() {
-  const router = useRouter();
+interface UseSignIn {
+  signIn: () => Promise<boolean>;
+  pending: boolean;
+  error: string | null;
+}
+
+export function useSignIn(): UseSignIn {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function signIn() {
+  async function signIn(): Promise<boolean> {
     setPending(true);
     setError(null);
     try {
@@ -24,24 +28,13 @@ export function GoogleSignIn() {
       if (!response.ok) {
         throw new Error("Session could not be created.");
       }
-      router.push("/");
-      router.refresh();
+      return true;
     } catch {
       setError("Sign in failed. Please try again.");
       setPending(false);
+      return false;
     }
   }
 
-  return (
-    <div className="space-y-3">
-      <button
-        onClick={signIn}
-        disabled={pending}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface px-5 py-3 font-medium transition hover:bg-surface-muted disabled:opacity-60"
-      >
-        {pending ? "Signing in..." : "Continue with Google"}
-      </button>
-      {error ? <p className="text-sm text-brand">{error}</p> : null}
-    </div>
-  );
+  return { signIn, pending, error };
 }

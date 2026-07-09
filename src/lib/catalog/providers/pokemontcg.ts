@@ -64,33 +64,41 @@ async function fetchFeatured(): Promise<CatalogCard[]> {
     .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
 }
 
-let memo: Map<string, CatalogCard> | null = null;
+let featuredMemo: CatalogCard[] | null = null;
+let inFlight: Promise<CatalogCard[]> | null = null;
 
-async function loadIntoMemo(): Promise<Map<string, CatalogCard>> {
-  const cards = await fetchFeatured();
-  memo = new Map(cards.map((card) => [card.id, card]));
-  return memo;
+async function loadFeatured(): Promise<CatalogCard[]> {
+  if (featuredMemo) return featuredMemo;
+  if (inFlight) return inFlight;
+  inFlight = fetchFeatured()
+    .then((cards) => {
+      featuredMemo = cards;
+      return cards;
+    })
+    .catch((error) => {
+      getLogger().error("catalog.fetch_failed", {
+        message: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    })
+    .finally(() => {
+      inFlight = null;
+    });
+  return inFlight;
 }
 
 export function createPokemonTcgCatalog(): Catalog {
   return {
     async getFeatured() {
-      try {
-        return await fetchFeatured();
-      } catch (error) {
-        getLogger().error("catalog.fetch_failed", {
-          message: error instanceof Error ? error.message : String(error),
-        });
-        throw error;
-      }
+      return loadFeatured();
     },
     async getCard(id) {
-      const store = memo ?? (await loadIntoMemo());
-      return store.get(id) ?? null;
+      const cards = await loadFeatured();
+      return cards.find((card) => card.id === id) ?? null;
     },
     async priceOf(id) {
-      const store = memo ?? (await loadIntoMemo());
-      return store.get(id)?.priceCents ?? null;
+      const cards = await loadFeatured();
+      return cards.find((card) => card.id === id)?.priceCents ?? null;
     },
   };
 }

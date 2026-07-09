@@ -8,7 +8,14 @@ import { reportEvent } from "@/lib/observability/report-event";
 
 export async function createOrder(): Promise<void> {
   const host = await requireHost();
-  const orderId = await getDb().createOrder({
+  const db = getDb();
+
+  const existing = await db.findOpenOrderByHost(host.uid);
+  if (existing) {
+    redirect(`/orders/${existing}`);
+  }
+
+  const orderId = await db.createOrder({
     hostUid: host.uid,
     hostName: host.name,
     hostEmail: host.email,
