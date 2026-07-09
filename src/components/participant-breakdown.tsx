@@ -59,7 +59,7 @@ export function ParticipantBreakdown({ totals, removable }: ParticipantBreakdown
                       {removable && removable.canRemove(participant.id) ? (
                         <button
                           onClick={() => removable.onRemove(item.id)}
-                          className="text-muted-foreground transition-colors hover:text-destructive"
+                          className="cursor-pointer text-muted-foreground transition-colors hover:text-destructive"
                           aria-label={`Remove ${item.name}`}
                         >
                           <Trash2 className="size-3.5" />
