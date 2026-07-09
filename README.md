@@ -72,10 +72,17 @@ Browser
 ```
 
 Because realtime is server-mediated, guests need no identity to receive live updates, and
-Firestore security rules stay **deny-all to clients** (`firestore.rules`). All access is
-server-mediated and authorized in code.
+Firestore security rules stay **deny-all to clients** (`firestore.rules`). Every database
+read and write goes through the server, and every write is authorized there (see below).
+Reads follow a capability model rather than a role check, which is called out explicitly in
+the next section.
 
 ### Authorization
+
+Writes are **role-authorized**; reads are **capability-gated** by the order link. The two
+are deliberately different, and the distinction matters:
+
+**Writes (role-authorized).**
 
 - **Host** identity is a Firebase UID carried in an HTTP-only session cookie, verified
   server-side with `verifySessionCookie` on every mutation.
@@ -83,10 +90,21 @@ server-mediated and authorized in code.
   HTTP-only cookie scoping them to exactly one participant slot.
 - Every Server Action re-derives the caller's role server-side. Checkout, invite, and the
   timer assert `caller.uid === order.hostUid`; a guest calling them is rejected regardless
-  of UI state.
+  of UI state. Adding cards requires a joined participant slot.
 - The three-participant cap and the timer close are enforced inside **Firestore
   transactions**, so concurrent joins cannot exceed the cap and a race cannot add items
   after the order closes. These paths are covered by the integration tests.
+
+**Reads (capability-gated).** The order view and its SSE stream are readable by anyone
+holding the order URL, without a participant relationship, the same way an unlisted link
+works. The `orderId` is a 12-character `nanoid` (~71 bits of entropy), so it is not
+enumerable, and the sensitive host-only surface (the checkout summary) is still gated to
+the host by both middleware and a server-side redirect. The read payload does include
+participant names and email addresses, so this is an intentional tradeoff: it keeps guests
+credential-less and the realtime layer simple, at the cost of link-holder confidentiality.
+Locking reads to participants is a small, well-contained change (a `getCallerParticipant`
+check on the order page and the stream route) and is the first thing I would tighten for a
+production deployment where an order URL might leak.
 
 ### Data integrity
 
@@ -184,6 +202,11 @@ pull request, with integration and E2E in parallel jobs.
 
 ## What I would do next
 
+- **Lock reads to participants**: gate the order page and SSE stream with a
+  `getCallerParticipant` check so order contents are not readable by link alone (see the
+  read-access tradeoff under [Authorization](#authorization)).
+- **Rate limiting**: throttle invites and Server Actions to protect the email quota and
+  add backpressure against action spam.
 - **Payments**: the checkout is a summary today; wire Stripe behind a `payments` seam.
 - **Catalog search and filters**: browse beyond the curated featured set.
 - **Reopen after close**: let a host reopen a closed order, not only extend the timer.
