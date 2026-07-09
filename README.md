@@ -1,5 +1,7 @@
 # Group Order for Pokemon Cards
 
+**Live demo: https://group-order-theta.vercel.app**
+
 A DoorDash-style group ordering experience built with Next.js. A host starts an order,
 invites up to two friends by email, everyone browses a catalog of real Pokemon cards and
 builds their own cart in real time, and the host closes the order and checks out. The
